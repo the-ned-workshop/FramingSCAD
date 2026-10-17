@@ -1,15 +1,21 @@
 # FramingSCAD
 
-A NeoSCAD library for light wood-frame buildings: lumber that reports itself, schematic framing
+An OpenSCAD-compatible library for light wood-frame buildings, built for [NeoSCAD](https://neoscad.org): lumber that reports itself, schematic framing
 connectors and fasteners, and tools that turn a model into a cut list, a lumber order, a clash check
 and construction drawings. It grew out of designing a 10' × 12' timber shed.
 
 ![Catalog](docs/catalog.png)
 
-**Requires [NeoSCAD](https://neoscad.org) with `--enable sketch`.** Every profile in the library (rafters,
-braces, connector shapes, fastener shanks) is a fully constrained NeoSCAD sketch (`strict = true`), so
-changing a dimension moves exactly what it should and an under- or over-constrained profile is an error.
-Units are inches.
+## NeoSCAD and OpenSCAD
+
+| | Profiles are drawn as | Run with |
+|---|---|---|
+| **NeoSCAD** (recommended) | fully constrained sketches (`strict = true`): change a dimension and exactly the right thing moves; an under- or over-constrained profile is an error | `neoscad --enable sketch …` |
+| **OpenSCAD** (2021.01 and later) | plain `polygon()` / `circle()` geometry, same shapes | `openscad -D FS_SKETCH=false …`, or set `FS_SKETCH = false;` after the `include` |
+
+Everything else, including members, echo lines, tools and hardware, works the same in both. Plain
+NeoSCAD without `--enable sketch` also needs `FS_SKETCH = false`. Neither program lets a file detect
+the sketch extension, so the switch is explicit. Units are inches.
 
 ```scad
 include <FramingSCAD/framing.scad>
@@ -25,7 +31,7 @@ translate([0, 30, 0]) h2_5a(count = true);               // hardware; count = tr
 | File | Contents |
 |---|---|
 | `lumber.scad` | `stick()`, `slab_xz()`, `slab_yz()` members; `rafter_profile()`; `dressed()` sizes; `sheet()`, `item()` order lines; `xf()`, `T()`, `along_y()`, `mirror_about_x()` placement transforms; `$noms`/`$tags` member filters |
-| `sketches.scad` | `profile(name, points)`: a closed polygon as a fully constrained sketch; `rect_profile()`, `strap_profile()` (strap with fastener holes), `pin_profile()` (revolved fastener half-profile) |
+| `sketches.scad` | `FS_SKETCH` switch; `profile(name, points)`: a closed polygon as a fully constrained sketch (or a polygon); `rect_profile()`, `strap_profile()` (strap with fastener holes), `pin_profile()` (revolved fastener half-profile) |
 | `connectors.scad` | Simpson Strong-Tie-style schematic connectors: `a35()`, `h2_5a()`, `h10a()`, `lsu26()`, `face_hanger()`, `msta(l)`, `cs16(l)`, `post_cap()`, `angle_clip()`, `strap()` |
 | `fasteners.scad` | `nail("6d"|"8d"|"10d"|"16d"|"N10")`, `sdws(len)`, `lag(d, len)`, `carriage_bolt(d, len)`, `earth_anchor(len)`, `rock_anchor(len, d)` |
 | `framing.scad` | includes everything |
@@ -57,6 +63,7 @@ World coordinates work because placements go through `xf(matrix)`, which multipl
 ```sh
 NEOSCAD=/Applications/NeoSCAD.app/Contents/Helpers/neoscad
 $NEOSCAD --enable sketch -o model.echo model.scad        # don't pass -q: it suppresses ECHO
+# OpenSCAD: openscad -D FS_SKETCH=false -o model.echo model.scad
 python3 tools/cutlist.py model.echo > order.md
 python3 tools/collide.py model.scad "frame()" "roof()"   # module calls that build the framing
 ```

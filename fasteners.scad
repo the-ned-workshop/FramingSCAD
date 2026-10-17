@@ -6,6 +6,13 @@
 
 include <lumber.scad>
 
+// ring(name, od, id): a disc (id = 0) or washer outline centred on the origin.
+module ring(name, od, id = 0) if (!FS_SKETCH) difference() { circle(d = od, $fn = 32); if (id > 0) circle(d = id, $fn = 24); }
+else sketch(name = name, strict = true) {
+    o = circle([0, 0], d = od); fix(o.center);
+    if (id > 0) { i = circle([0, 0], d = id); fix(i.center); }
+}
+
 C_BRIGHT = [0.72, 0.72, 0.74];
 C_HDG    = [0.58, 0.60, 0.60];
 
@@ -36,9 +43,7 @@ module sdws(len = 4) {
 module lag(d = 0.5, len = 10) {
     color(C_HDG) {
         rotate_extrude($fn = 20) pin_profile(str("lag ", d, "x", len), d / 2, len, d * 0.75, d * 0.65, d);
-        translate([0, 0, len - d * 0.65 - 0.1]) linear_extrude(0.1) sketch(name = "washer", strict = true) {
-            o = circle([0, 0], d = d * 2.6); i = circle([0, 0], d = d * 1.1); fix(o.center); fix(i.center);
-        }
+        translate([0, 0, len - d * 0.65 - 0.1]) linear_extrude(0.1) ring("washer", d * 2.6, d * 1.1);
     }
 }
 
@@ -55,9 +60,7 @@ module carriage_bolt(d = 0.25, len = 3) {
 module earth_anchor(len = 48, helix_d = 4, count = false) {
     color(C_HDG) {
         rotate_extrude($fn = 16) pin_profile("anchor shaft", 0.375, len, 0.375, 0.01, 1.5);
-        translate([0, 0, 3]) linear_extrude(0.25) sketch(name = "helix", strict = true) {
-            c = circle([0, 0], d = helix_d); fix(c.center);
-        }
+        translate([0, 0, 3]) linear_extrude(0.25) ring("helix", helix_d, 0);
         translate([0, 0, len + 0.9]) rotate([90, 0, 0]) rotate_extrude($fn = 24) translate([0.9, 0]) circle(0.2, $fn = 10);
     }
     if (count) item("foundation", str(len, "\" helical earth anchor"));
