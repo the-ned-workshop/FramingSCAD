@@ -1,5 +1,5 @@
-// framing.scad — the whole ned-framing library.
-//   include <ned-framing/framing.scad>
+// framing.scad — the whole FramingSCAD library.
+//   include <FramingSCAD/framing.scad>
 // Needs NeoSCAD with `--enable sketch`. Units: inches.
 include <lumber.scad>
 include <connectors.scad>

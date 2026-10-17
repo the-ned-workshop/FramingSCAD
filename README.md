@@ -1,8 +1,8 @@
-# ned-framing
+# FramingSCAD
 
 A NeoSCAD library for light wood-frame buildings: lumber that reports itself, schematic framing
 connectors and fasteners, and tools that turn a model into a cut list, a lumber order, a clash check
-and construction drawings. Built for The Ned Workshop's projects, starting with a 10' × 12' bike shed.
+and construction drawings. It grew out of designing a 10' × 12' timber shed.
 
 ![Catalog](docs/catalog.png)
 
@@ -12,7 +12,7 @@ changing a dimension moves exactly what it should and an under- or over-constrai
 Units are inches.
 
 ```scad
-include <ned-framing/framing.scad>
+include <FramingSCAD/framing.scad>
 
 stick("stud", "2x6", [0, 0, 7], [1.5, 5.5, 86]);          // an axis-aligned member
 slab_xz("rafter", "2x6", 90, rafter_profile(3/12, -12, 0, 3.5, 58, 117.5, 5.67), 23.25);
@@ -71,3 +71,7 @@ include the file and call the framing modules itself.
 - Nominal strings start with a size from `DRESSED` and can carry a grade or treatment after a space:
   `"2x6"`, `"6x6 UC4B"`, `"4x6 DF#2"`, `"1-3/4x9-1/4 LVL"`.
 - Hardware takes `count = true` to echo an `ITEM` line when it's placed.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
