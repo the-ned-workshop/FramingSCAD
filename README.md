@@ -6,6 +6,33 @@ and construction drawings. It grew out of designing a 10' × 12' timber shed.
 
 ![Catalog](docs/catalog.png)
 
+## Install
+
+OpenSCAD and NeoSCAD have no package manager: `include <FramingSCAD/framing.scad>` is a path that
+must resolve either next to your file or in a library search folder. Pick one of these.
+
+**A. Per project, pinned (recommended).** Add the library as a git submodule and include it by
+relative path. Every project records the exact commit it was built with.
+
+```sh
+git submodule add https://github.com/the-ned-workshop/FramingSCAD.git lib/FramingSCAD
+```
+```scad
+include <lib/FramingSCAD/framing.scad>   // relative to the including file
+```
+Update later with `git -C lib/FramingSCAD pull` (or check out a tag) and commit the new pointer.
+
+**B. Once per machine.** Clone into the user library folder, or into any folder on `OPENSCADPATH`,
+and every model on the machine can `include <FramingSCAD/framing.scad>`. It's simpler, but unpinned:
+every project sees whatever version is checked out.
+
+```sh
+# macOS (Linux: ~/.local/share/OpenSCAD/libraries; Windows: Documents\OpenSCAD\libraries)
+git clone https://github.com/the-ned-workshop/FramingSCAD.git ~/Documents/OpenSCAD/libraries/FramingSCAD
+```
+
+`neoscad --info` (or OpenSCAD's Help → Library Info) lists the folders searched.
+
 ## NeoSCAD and OpenSCAD
 
 | | Profiles are drawn as | Run with |
