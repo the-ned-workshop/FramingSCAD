@@ -1,0 +1,3 @@
+*.stl
+*.echo
+__pycache__/
