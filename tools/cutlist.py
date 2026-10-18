@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Turn a shed model's echo output into a cut list and a lumber-yard order.
 
-    neoscad --enable sketch -o model.echo model.scad      # no -q: it suppresses ECHO
+    neoscad --enable sketch --enable query -o model.echo model.scad   # no -q: it suppresses ECHO
     python3 tools/cutlist.py model.echo > order.md
 
 Each framing member echoes CUT|tag|nominal|length_in; sheet goods echo

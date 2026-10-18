@@ -6,10 +6,17 @@
 //   GEO|poly|tag|nominal|[[x,y,z]…]|[thickness vector]
 // plus SHEET|tag|kind|sq ft and ITEM|tag|what|count for sheet goods and bought items.
 //
-// World positions: wrap placements in xf(matrix) (or along_y(), mirror_about_x()) instead
-// of translate()/mirror() so members can report where they really are.
+// World positions: under NeoSCAD with `--enable query`, members read their own transform
+// (to_world()), so plain translate()/rotate()/mirror() around them report correctly. Without
+// it (OpenSCAD), wrap placements in xf(matrix) (or along_y(), mirror_about_x()) instead,
+// which thread the matrix through $M; those work everywhere.
+// Parts: with `--enable part`, every member is a part() named "<tag> <world corner>", so an
+// SVG or DXF export (through projection()) keeps one outline per member.
 
 include <sketches.scad>
+
+FS_WORLD = fs_feature("query");
+FS_PART = fs_feature("part");
 
 C_FRAME   = [0.89, 0.76, 0.55];
 C_TREATED = [0.56, 0.64, 0.46];
@@ -42,8 +49,10 @@ function _all() = is_undef($noms) && is_undef($tags);
 I4 = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
 function _M() = is_undef($M) ? I4 : $M;
 function T(v) = [[1, 0, 0, v[0]], [0, 1, 0, v[1]], [0, 0, 1, v[2]], [0, 0, 0, 1]];
-function _pt(p) = let (m = _M(), q = m * [p[0], p[1], p[2], 1]) [q[0], q[1], q[2]];
+function _pt(p) = FS_WORLD ? to_world(p) : let (m = _M(), q = m * [p[0], p[1], p[2], 1]) [q[0], q[1], q[2]];
 module xf(m) { $M = _M() * m; multmatrix(m) children(); }
+// a part() per member when the extension is on; a plain group otherwise
+module _part(name) if (FS_PART) part(name) children(); else children();
 // lay a wall drawn along +x down along +y (swap x and y)
 module along_y() xf([[0, 1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]) children();
 // mirror about the plane x = cx when on
@@ -55,9 +64,9 @@ module mirror_about_x(cx, on = true) xf(on ? [[-1, 0, 0, 2 * cx], [0, 1, 0, 0], 
 module stick(tag, nom, p, s, c = C_FRAME) if (_on(nom, tag)) {
     echo(str("CUT|", tag, "|", nom, "|", max(s)));
     a = _pt(p); b = _pt(p + s);
-    echo(str("GEO|box|", tag, "|", nom, "|", [min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2])], "|",
-             [max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2])]));
-    color(c) translate(p) cube(s);
+    lo = [min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2])];
+    echo(str("GEO|box|", tag, "|", nom, "|", lo, "|", [max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2])]));
+    _part(str(tag, " ", lo)) color(c) translate(p) cube(s);
 }
 
 // slab_xz(tag, nom, len, pts, y0, t): a member whose profile pts lies in the x–z plane
@@ -65,14 +74,14 @@ module stick(tag, nom, p, s, c = C_FRAME) if (_on(nom, tag)) {
 module slab_xz(tag, nom, len, pts, y0, t = 1.5, c = C_FRAME) if (_on(nom, tag)) {
     echo(str("CUT|", tag, "|", nom, "|", len));
     echo(str("GEO|poly|", tag, "|", nom, "|", [for (q = pts) _pt([q[0], y0, q[1]])], "|", _pt([0, y0 + t, 0]) - _pt([0, y0, 0])));
-    color(c) translate([0, y0 + t, 0]) rotate([90, 0, 0]) linear_extrude(t) profile(tag, pts);
+    _part(str(tag, " ", _pt([pts[0][0], y0, pts[0][1]]))) color(c) translate([0, y0 + t, 0]) rotate([90, 0, 0]) linear_extrude(t) profile(tag, pts);
 }
 
 // slab_yz(tag, nom, len, pts, x0, t): profile in the y–z plane (u → y, v → z), t thick along +x.
 module slab_yz(tag, nom, len, pts, x0, t = 1.5, c = C_FRAME) if (_on(nom, tag)) {
     echo(str("CUT|", tag, "|", nom, "|", len));
     echo(str("GEO|poly|", tag, "|", nom, "|", [for (q = pts) _pt([x0, q[0], q[1]])], "|", _pt([x0 + t, 0, 0]) - _pt([x0, 0, 0])));
-    color(c) translate([x0, 0, 0]) rotate([90, 0, 90]) linear_extrude(t) profile(tag, pts);
+    _part(str(tag, " ", _pt([x0, pts[0][0], pts[0][1]]))) color(c) translate([x0, 0, 0]) rotate([90, 0, 90]) linear_extrude(t) profile(tag, pts);
 }
 
 // rafter_profile(pitch, x_tail, x_seat_out, x_seat_in, x_top, z_seat, depth):

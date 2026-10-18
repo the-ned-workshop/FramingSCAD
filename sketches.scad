@@ -1,25 +1,21 @@
 // sketches.scad — 2D profiles shared by the framing library.
 //
-// FS_SKETCH = true (default): every profile is a fully constrained NeoSCAD sketch
-// (run NeoSCAD with `--enable sketch`). FS_SKETCH = false: the same profiles as plain
-// polygon()/circle() geometry, for OpenSCAD or NeoSCAD without the sketch extension.
-// Override after the include, or with -D FS_SKETCH=false.
-FS_SKETCH = true;
+// Under NeoSCAD with `--enable sketch`, every profile is a fully constrained sketch. Anywhere
+// else (OpenSCAD, or NeoSCAD without the extension) the same profiles are plain polygon() /
+// circle() geometry. The switch is automatic: $neoscad_features lists the extensions that are
+// on and is unbound in OpenSCAD. Override it after the include, or with -D FS_SKETCH=false.
 
-// profile(name, P): a closed polygon through the points P as a fully constrained sketch.
-// The first point is fixed; every edge but the closing one gets its direction and length
-// (horizontal/vertical + length, or dx/dy distances), so strict = true holds and changing
-// a dimension in P moves exactly what it should.
+// fs_feature("sketch"|"query"|"part"): whether a NeoSCAD extension is on (false in OpenSCAD).
+function fs_feature(name) = !is_undef($neoscad_features) && [for (f = $neoscad_features) if (f == name) f] != [];
+
+FS_SKETCH = fs_feature("sketch");
+
+// profile(name, P): a closed polygon through the points P. As a sketch, polyline() with
+// constrain = "fixed" pins the first point and gives every edge but the closing one its
+// direction and length, so strict = true holds and changing a dimension in P moves exactly
+// what it should.
 module profile(name, P) if (!FS_SKETCH) polygon(P); else sketch(name = name, strict = true) {
-    n = len(P);
-    q = [for (p = P) point(p)];
-    e = [for (i = [0 : n - 1]) line(q[i], q[(i + 1) % n])];
-    fix(q[0]);
-    for (i = [0 : n - 2]) let (d = P[i + 1] - P[i]) {
-        if (d[1] == 0) { horizontal(e[i]); length(e[i], abs(d[0])); }
-        else if (d[0] == 0) { vertical(e[i]); length(e[i], abs(d[1])); }
-        else { distance(q[i], q[i + 1], d[0], along = "x"); distance(q[i], q[i + 1], d[1], along = "y"); }
-    }
+    e = polyline(P, constrain = "fixed");
 }
 
 // rect_profile(name, w, h): a w × h rectangle with its lower-left corner at the origin.
@@ -30,9 +26,7 @@ module rect_profile(name, w, h) profile(name, [[0, 0], [w, 0], [w, h], [0, h]]);
 module strap_profile(name, w, l, hole_d = 0.17, pitch = 1) if (!FS_SKETCH)
     difference() { square([l, w]); for (x = [pitch / 2 : pitch : l - pitch / 2]) translate([x, w / 2]) circle(d = hole_d, $fn = 12); }
 else sketch(name = name, strict = true) {
-    c = [point([0, 0]), point([l, 0]), point([l, w]), point([0, w])];
-    e = [for (i = [0 : 3]) line(c[i], c[(i + 1) % 4])];
-    fix(c[0]); horizontal(e[0]); length(e[0], l); vertical(e[1]); length(e[1], w); horizontal(e[2]); vertical(e[3]);
+    e = polyline([[0, 0], [l, 0], [l, w], [0, w]], constrain = "fixed");
     for (x = [pitch / 2 : pitch : l - pitch / 2]) {
         h = circle([x, w / 2], d = hole_d);
         fix(h.center);

@@ -8,11 +8,25 @@ and construction drawings. It grew out of designing a 10' × 12' timber shed.
 
 ## Install
 
-OpenSCAD and NeoSCAD have no package manager: `include <FramingSCAD/framing.scad>` is a path that
-must resolve either next to your file or in a library search folder. Pick one of these.
+`include <FramingSCAD/framing.scad>` is a path that must resolve next to your file or in a library
+search folder. Pick one of these.
 
-**A. Per project, pinned (recommended).** Add the library as a git submodule and include it by
-relative path. Every project records the exact commit it was built with.
+**A. As a project dependency (NeoSCAD 0.7 and later, recommended).** One command records the library
+and its exact commit in `scad.toml` / `scad.lock`, checks it out once per machine into a shared store
+and links it into `<project>/.scad/libraries`:
+
+```sh
+neoscad add FramingSCAD --git https://github.com/the-ned-workshop/FramingSCAD --tag v0.1.0
+```
+```scad
+include <FramingSCAD/framing.scad>
+```
+A fresh clone of the project needs only `neoscad fetch`. Stock OpenSCAD renders the same files after
+`export $(neoscad vendor)` or with `OPENSCADPATH=$(neoscad fetch --print-path)`; see NeoSCAD's
+[dependencies guide](https://github.com/neoscad/neoscad/blob/main/docs/dependencies.md). The same
+`scad-deps` command line is available on its own (`cargo install scad-deps --features cli`).
+
+**B. As a git submodule.** Pinned and portable, included by relative path.
 
 ```sh
 git submodule add https://github.com/the-ned-workshop/FramingSCAD.git lib/FramingSCAD
@@ -20,9 +34,8 @@ git submodule add https://github.com/the-ned-workshop/FramingSCAD.git lib/Framin
 ```scad
 include <lib/FramingSCAD/framing.scad>   // relative to the including file
 ```
-Update later with `git -C lib/FramingSCAD pull` (or check out a tag) and commit the new pointer.
 
-**B. Once per machine.** Clone into the user library folder, or into any folder on `OPENSCADPATH`,
+**C. Once per machine.** Clone into the user library folder, or into any folder on `OPENSCADPATH`,
 and every model on the machine can `include <FramingSCAD/framing.scad>`. It's simpler, but unpinned:
 every project sees whatever version is checked out.
 
@@ -35,14 +48,18 @@ git clone https://github.com/the-ned-workshop/FramingSCAD.git ~/Documents/OpenSC
 
 ## NeoSCAD and OpenSCAD
 
-| | Profiles are drawn as | Run with |
-|---|---|---|
-| **NeoSCAD** (recommended) | fully constrained sketches (`strict = true`): change a dimension and exactly the right thing moves; an under- or over-constrained profile is an error | `neoscad --enable sketch …` |
-| **OpenSCAD** (2021.01 and later) | plain `polygon()` / `circle()` geometry, same shapes | `openscad -D FS_SKETCH=false …`, or set `FS_SKETCH = false;` after the `include` |
+The library runs in both and adapts itself: `$neoscad_features` (unbound in OpenSCAD) says which
+NeoSCAD extensions are on, and `fs_feature("sketch")` and friends read it.
 
-Everything else, including members, echo lines, tools and hardware, works the same in both. Plain
-NeoSCAD without `--enable sketch` also needs `FS_SKETCH = false`. Neither program lets a file detect
-the sketch extension, so the switch is explicit. Units are inches.
+| NeoSCAD extension | On (`neoscad --enable …`) | Off, or OpenSCAD (2021.01 and later) |
+|---|---|---|
+| `sketch` | every profile is a fully constrained sketch (`polyline(…, constrain = "fixed")`, `strict = true`): change a dimension and exactly the right thing moves; an under- or over-constrained profile is an error | the same shapes as plain `polygon()` / `circle()` |
+| `query` | members report world coordinates through `to_world()`, whatever `translate()` / `rotate()` / `mirror()` is around them | members report world coordinates only inside `xf()` / `along_y()` / `mirror_about_x()` placements |
+| `part` | every member is a `part()` named `"<tag> <world corner>"`, so an SVG or DXF export through `projection()` keeps one outline per member | members are plain groups; 2D exports union touching members |
+
+Run NeoSCAD with `--enable sketch --enable query --enable part` for all three (one flag each). To force
+the plain geometry anyway, `-D FS_SKETCH=false` or `FS_SKETCH = false;` after the `include`. Units
+are inches.
 
 ```scad
 include <FramingSCAD/framing.scad>
@@ -57,8 +74,8 @@ translate([0, 30, 0]) h2_5a(count = true);               // hardware; count = tr
 
 | File | Contents |
 |---|---|
-| `lumber.scad` | `stick()`, `slab_xz()`, `slab_yz()` members; `rafter_profile()`; `dressed()` sizes; `sheet()`, `item()` order lines; `xf()`, `T()`, `along_y()`, `mirror_about_x()` placement transforms; `$noms`/`$tags` member filters |
-| `sketches.scad` | `FS_SKETCH` switch; `profile(name, points)`: a closed polygon as a fully constrained sketch (or a polygon); `rect_profile()`, `strap_profile()` (strap with fastener holes), `pin_profile()` (revolved fastener half-profile) |
+| `lumber.scad` | `stick()`, `slab_xz()`, `slab_yz()` members (each a `part()` under `--enable part`); `rafter_profile()`; `dressed()` sizes; `sheet()`, `item()` order lines; `xf()`, `T()`, `along_y()`, `mirror_about_x()` placement transforms; `$noms`/`$tags` member filters |
+| `sketches.scad` | `fs_feature(name)` and the `FS_SKETCH` switch; `profile(name, points)`: a closed polygon as a fully constrained sketch (or a polygon); `rect_profile()`, `strap_profile()` (strap with fastener holes), `pin_profile()` (revolved fastener half-profile) |
 | `connectors.scad` | Simpson Strong-Tie-style schematic connectors: `a35()`, `h2_5a()`, `h10a()`, `lsu26()`, `face_hanger()`, `msta(l)`, `cs16(l)`, `post_cap()`, `angle_clip()`, `strap()` |
 | `fasteners.scad` | `nail("6d"|"8d"|"10d"|"16d"|"N10")`, `sdws(len)`, `lag(d, len)`, `carriage_bolt(d, len)`, `earth_anchor(len)`, `rock_anchor(len, d)` |
 | `framing.scad` | includes everything |
@@ -82,21 +99,27 @@ SHEET|tag|kind|square feet                       sheet goods          → order
 ITEM|tag|what|count                              bought items         → order
 ```
 
-World coordinates work because placements go through `xf(matrix)`, which multiplies `$M`. Plain
-`translate()`/`mirror()` still draw correctly, but the members inside them report local coordinates.
+Under NeoSCAD with `--enable query`, members read their own transform (`to_world()`), so any
+placement reports world coordinates. Elsewhere they work because placements go through `xf(matrix)`,
+which multiplies `$M`: plain `translate()`/`mirror()` still draw correctly, but the members inside
+them report local coordinates.
 
 ## Tools
 
 ```sh
 NEOSCAD=/Applications/NeoSCAD.app/Contents/Helpers/neoscad
-$NEOSCAD --enable sketch -o model.echo model.scad        # don't pass -q: it suppresses ECHO
-# OpenSCAD: openscad -D FS_SKETCH=false -o model.echo model.scad
+$NEOSCAD --enable sketch --enable query -o model.echo model.scad   # don't pass -q: it suppresses ECHO
+# OpenSCAD: openscad -o model.echo model.scad
 python3 tools/cutlist.py model.echo > order.md
 python3 tools/collide.py model.scad "frame()" "roof()"   # module calls that build the framing
+# one outline per member, for drawings:
+$NEOSCAD --enable sketch --enable query --enable part -o front.svg front_view.scad   # projection() of the model
 ```
 
 `collide.py` needs the model's top-level calls wrapped in `if (is_undef(model_only)) { … }` so it can
-include the file and call the framing modules itself.
+include the file and call the framing modules itself; its scratch files go beside the model so they
+share its project. The tools are also at `.scad/libraries/FramingSCAD/tools/` in a project that
+depends on the library.
 
 ## Conventions
 

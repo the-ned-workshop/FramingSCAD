@@ -10,6 +10,7 @@ framing passed as arguments (default: frame()/walls() and roof()).
 """
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -24,7 +25,8 @@ def run(path, body, out):
     open(scad, "w").write(src)
     if os.path.exists(out):
         os.remove(out)
-    r = subprocess.run([NEOSCAD, "--enable", "sketch", "--backend=manifold", "-o", out, scad], capture_output=True, text=True)
+    r = subprocess.run([NEOSCAD, "--enable", "sketch", "--enable", "query", "--backend=manifold", "-o", out, scad],
+                       capture_output=True, text=True)
     return r.stderr
 
 
@@ -45,7 +47,16 @@ def volume(stl):
 
 
 def main(path, mods):
-    tmp = tempfile.mkdtemp()
+    # The scratch files live beside the model so its includes resolve through the same
+    # project (scad.toml / .scad/libraries) as the model itself.
+    tmp = tempfile.mkdtemp(prefix=".collide-", dir=os.path.dirname(os.path.abspath(path)))
+    try:
+        return check(path, mods, tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def check(path, mods, tmp):
     out = f"{tmp}/x.stl"
     calls = " ".join(f"{m};" for m in mods)
     echo = run(path, f"union() {{ {calls} }}", f"{tmp}/all.echo".replace(".echo", ".stl"))

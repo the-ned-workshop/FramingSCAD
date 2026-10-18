@@ -1,6 +1,6 @@
 // catalog.scad — every component in the library, magnified to fill a 6" cell, with labels.
-// neoscad --enable sketch -o docs/catalog.png --imgsize=1600,900 --camera=0,0,0,55,0,20,0 \
-//         --viewall --autocenter --projection=o examples/catalog.scad
+// neoscad --enable sketch --enable query --enable part -o docs/catalog.png --imgsize=1600,900 \
+//         --camera=0,0,0,55,0,20,0 --viewall --autocenter --projection=o examples/catalog.scad
 include <../framing.scad>
 
 ITEMS = ["A35", "H2.5A", "H10A", "LSU26", "MSTA36", "CS16", "8d nail",
