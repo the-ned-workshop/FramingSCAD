@@ -98,3 +98,7 @@ module sheet(tag, kind, area_sf) echo(str("SHEET|", tag, "|", kind, "|", area_sf
 
 // Things bought by count (hardware, anchors, doors…).
 module item(tag, what, n = 1) echo(str("ITEM|", tag, "|", what, "|", n));
+// Hardware modules take count = true to order one of themselves, or a string saying where it
+// goes ("loft joist to ledger"), which the order lists as its own line: what, where.
+module counted(tag, what, count) if (count != false && !is_undef(count))
+    item(tag, is_string(count) ? str(what, ", ", count) : what);

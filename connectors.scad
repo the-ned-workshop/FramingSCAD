@@ -3,7 +3,7 @@
 // Shapes and sizes are close enough for details, clash checks and counts; they are not
 // catalogue drawings. Check the manufacturer's current catalogue for exact dimensions,
 // fastener schedules and allowable loads. Each connector echoes an ITEM line when
-// count = true, so placing it in a model also orders it.
+// count = true (or a string saying where it goes), so placing it in a model also orders it.
 //
 // Orientation conventions are given per module; the origin is the connector's reference
 // corner on the framing it attaches to.
@@ -27,7 +27,7 @@ module angle_clip(name, a, b, l, t = GA18) {
 // a35(): framing angle; legs 1-7/16" × 1-7/16", 4-1/2" long (along +y).
 module a35(count = false) {
     color(C_ZMAX) angle_clip("A35", 1.4375, 1.4375, 4.5);
-    if (count) item("connector", "Simpson A35 framing angle");
+    counted("connector", "Simpson A35 framing angle", count);
 }
 
 // h2_5a(): hurricane tie on a rafter seated on a top plate. The rafter runs along +x with
@@ -41,7 +41,7 @@ module h2_5a(count = false) {
         // … twisting to a leg down the outside face of the plate (y–z plane at x = 0)
         translate([0, -1.4, -2.4]) rotate([0, -90, 0]) _plate("H2.5A plate leg", 2.4, 1.4, GA18);
     }
-    if (count) item("connector", "Simpson H2.5A hurricane tie");
+    counted("connector", "Simpson H2.5A hurricane tie", count);
 }
 
 // h10a(): heavier hurricane tie, same placement as h2_5a().
@@ -50,7 +50,7 @@ module h10a(count = false) {
         rotate([90, 0, 0]) _plate("H10A rafter leg", 1.75, 4.5, GA18);
         translate([0, -1.9, -3.5]) rotate([0, -90, 0]) _plate("H10A plate leg", 3.5, 1.9, GA18);
     }
-    if (count) item("connector", "Simpson H10A hurricane tie");
+    counted("connector", "Simpson H10A hurricane tie", count);
 }
 
 // strap(name, l, w, t): flat punched strap l long along +x, w wide along +y, on z = 0.
@@ -59,13 +59,13 @@ module strap(name, l, w = 1.25, t = GA18) linear_extrude(t) strap_profile(name, 
 // msta(l): Simpson MSTA strap (l = 36 for MSTA36), ZMAX.
 module msta(l = 36, count = false) {
     color(C_ZMAX) strap(str("MSTA", l), l);
-    if (count) item("connector", str("Simpson MSTA", l, "Z strap (ZMAX)"));
+    counted("connector", str("Simpson MSTA", l, "Z strap (ZMAX)"), count);
 }
 
 // cs16(l): coil strap cut to length l.
 module cs16(l = 24, count = false) {
     color(C_ZMAX) strap("CS16", l, 1.25, GA16);
-    if (count) item("connector", str("Simpson CS16 coil strap (ZMAX), ", l, "\" piece"));
+    counted("connector", str("Simpson CS16 coil strap (ZMAX), ", l, "\" piece"), count);
 }
 
 // lsu26(): sloped/skewable U-hanger for a 2x6, seat at z = 0, the carried member's end
@@ -80,7 +80,7 @@ module lsu26(count = false) {
         for (s = [-1, 1]) translate([s > 0 ? w / 2 : -w / 2 - 1.25, 0, 0.5]) rotate([90, 0, 0])
             _plate("LSU26 flange", 1.25, 4.5, GA18);
     }
-    if (count) item("connector", "Simpson LSU26 skewable rafter hanger");
+    counted("connector", "Simpson LSU26 skewable rafter hanger", count);
 }
 
 // face_hanger(name, w, h, d): generic face-mount hanger for a member w wide and h deep,
@@ -93,7 +93,7 @@ module face_hanger(name, w, h, d = 2, t = GA16, count = false) {
         for (s = [-1, 1]) translate([s > 0 ? ww / 2 : -ww / 2 - 1.25, 0, 0]) rotate([90, 0, 0])
             _plate(str(name, " flange"), 1.25, h, t);
     }
-    if (count) item("connector", str("Simpson ", name, " face-mount hanger"));
+    counted("connector", str("Simpson ", name, " face-mount hanger"), count);
 }
 
 // post_cap(name, post_w, beam_w): U-shaped cap for a beam on a post; post top at z = 0,
@@ -104,5 +104,5 @@ module post_cap(name, post_w = 3.5, beam_w = 3.5, t = GA16, count = false) {
         for (s = [-1, 1]) translate([s > 0 ? beam_w / 2 + t : -beam_w / 2, -post_w / 2, -4]) rotate([0, -90, 0])
             _plate(str(name, " side"), 8, post_w, t);
     }
-    if (count) item("connector", str("Simpson ", name, " post cap"));
+    counted("connector", str("Simpson ", name, " post cap"), count);
 }

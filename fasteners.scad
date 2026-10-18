@@ -27,32 +27,36 @@ NAILS = [
 function nail_spec(size) = let (m = [for (n = NAILS) if (n[0] == size) n]) len(m) ? m[0] : undef;
 
 // nail(size, hdg): a common nail ("8d", "16d", "N10" …).
-module nail(size = "8d", hdg = false) {
+module nail(size = "8d", hdg = false, count = false) {
     n = nail_spec(size);
     assert(!is_undef(n), str("unknown nail size ", size));
     color(hdg ? C_HDG : C_BRIGHT) rotate_extrude($fn = 16)
         pin_profile(str("nail ", size), n[1] / 2, n[2], n[3] / 2, 0.06, n[1] * 1.2);
+    counted("fastener", str(size, " common nail", hdg ? " (HDG)" : ""), count);
 }
 
 // sdws(len): Simpson Strong-Drive SDWS ¼" timber screw with a washer head.
-module sdws(len = 4) {
+module sdws(len = 4, count = false) {
     color(C_HDG) rotate_extrude($fn = 16) pin_profile(str("SDWS ", len), 0.11, len, 0.375, 0.12, 0.3);
+    counted("fastener", str("Simpson SDWS 1/4\" x ", len, "\" timber screw"), count);
 }
 
 // lag(d, len): hex-head lag screw (head drawn round) with a flat washer under it.
-module lag(d = 0.5, len = 10) {
+module lag(d = 0.5, len = 10, count = false) {
     color(C_HDG) {
         rotate_extrude($fn = 20) pin_profile(str("lag ", d, "x", len), d / 2, len, d * 0.75, d * 0.65, d);
         translate([0, 0, len - d * 0.65 - 0.1]) linear_extrude(0.1) ring("washer", d * 2.6, d * 1.1);
     }
+    counted("fastener", str(d, "\" x ", len, "\" HDG lag screw with washer"), count);
 }
 
 // carriage_bolt(d, len): domed-head bolt (dome drawn as a low cylinder), nut at the tip.
-module carriage_bolt(d = 0.25, len = 3) {
+module carriage_bolt(d = 0.25, len = 3, count = false) {
     color(C_HDG) {
         rotate_extrude($fn = 20) pin_profile(str("carriage bolt ", d), d / 2, len, d * 1.1, d * 0.55, 0.03);
         translate([0, 0, 0.1]) cylinder(d = d * 1.8, h = d * 0.9, $fn = 6);
     }
+    counted("fastener", str(d, "\" x ", len, "\" HDG carriage bolt with nut and washer"), count);
 }
 
 // earth_anchor(len, helix_d): helical earth anchor — 3/4" shaft, one helix plate near the
@@ -63,12 +67,12 @@ module earth_anchor(len = 48, helix_d = 4, count = false) {
         translate([0, 0, 3]) linear_extrude(0.25) ring("helix", helix_d, 0);
         translate([0, 0, len + 0.9]) rotate([90, 0, 0]) rotate_extrude($fn = 24) translate([0.9, 0]) circle(0.2, $fn = 10);
     }
-    if (count) item("foundation", str(len, "\" helical earth anchor"));
+    counted("foundation", str(len, "\" helical earth anchor"), count);
 }
 
 // rock_anchor(len, d): epoxied threaded rod / rebar anchor; z = 0 is the bottom of the hole.
 module rock_anchor(len = 18, d = 0.625, count = false) {
     color(C_STEEL) cylinder(d = d, h = len, $fn = 16);
     color([0.55, 0.52, 0.45], 0.6) cylinder(d = d + 0.25, h = len * 0.6, $fn = 16);   // epoxy
-    if (count) item("foundation", str(d, "\" epoxied rock anchor, ", len, "\""));
+    counted("foundation", str(d, "\" epoxied rock anchor, ", len, "\""), count);
 }
