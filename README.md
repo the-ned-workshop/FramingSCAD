@@ -127,7 +127,10 @@ depends on the library.
   "member" column and the clash-check unit.
 - Nominal strings start with a size from `DRESSED` and can carry a grade or treatment after a space:
   `"2x6"`, `"6x6 UC4B"`, `"4x6 DF#2"`, `"1-3/4x9-1/4 LVL"`.
-- Hardware takes `count = true` to echo an `ITEM` line when it's placed.
+- Hardware takes `count = true` to echo an `ITEM` line when it's placed, or a string saying where
+  it goes (`a35(count = "loft joist to ledger")`), which the order lists as its own line. So a
+  model that places every tie where the details put it also writes the hardware order, with
+  locations. Your own hardware can do the same through `counted(tag, what, count)`.
 
 ## License
 
